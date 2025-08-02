@@ -1,0 +1,95 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter: Debug (macOS)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "args": [
+                "--flavor",
+                "development"
+            ],
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Debug (iOS Simulator)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "deviceId": "ios"
+        },
+        {
+            "name": "Flutter: Debug (Android Emulator)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "deviceId": "android"
+        },
+        {
+            "name": "Flutter: Debug (Chrome)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "deviceId": "chrome"
+        },
+        {
+            "name": "Flutter: Profile (macOS)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "flutterMode": "profile",
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Release (macOS)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "flutterMode": "release",
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Hot Reload",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "hot": true,
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Debug with Custom Arguments",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "args": [
+                "--dart-define=ENVIRONMENT=development",
+                "--dart-define=API_URL=https://api.example.com"
+            ],
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Debug Integration Tests",
+            "type": "dart",
+            "request": "launch",
+            "program": "integration_test/app_test.dart",
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Debug Widget Tests",
+            "type": "dart",
+            "request": "launch",
+            "program": "test/widget_test.dart",
+            "deviceId": "macos"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Flutter: Debug All Platforms",
+            "configurations": [
+                "Flutter: Debug (macOS)",
+                "Flutter: Debug (Chrome)"
+            ]
+        }
+    ]
+} 
