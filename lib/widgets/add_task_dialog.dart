@@ -134,7 +134,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               Row(
                 children: TaskPriority.values.map((priority) {
                   final isSelected = _selectedPriority == priority;
-                  final color = Color(Task.priorityColors[priority]!);
+                  final color = Color(TaskX.priorityColors[priority]!);
                   
                   return Expanded(
                     child: Padding(

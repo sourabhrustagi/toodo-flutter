@@ -402,7 +402,7 @@ class ProfileScreen extends StatelessWidget {
             leading: CircleAvatar(
               backgroundColor: task.isCompleted 
                   ? Colors.green 
-                  : Color(Task.priorityColors[task.priority]!),
+                  : Color(TaskX.priorityColors[task.priority]!),
               child: Icon(
                 task.isCompleted ? Icons.check : Icons.task_alt,
                 color: Colors.white,

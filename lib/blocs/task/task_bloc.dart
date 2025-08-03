@@ -1,256 +1,86 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
 
+part 'task_bloc.freezed.dart';
+
 // Events
-abstract class TaskEvent extends Equatable {
-  const TaskEvent();
-
-  @override
-  List<Object?> get props => [];
+@freezed
+class TaskEvent with _$TaskEvent {
+  const factory TaskEvent.initialized() = TaskInitialized;
+  
+  const factory TaskEvent.added({
+    required String title,
+    required String description,
+    @Default(TaskPriority.medium) TaskPriority priority,
+    DateTime? dueDate,
+    @Default('General') String category,
+  }) = TaskAdded;
+  
+  const factory TaskEvent.updated(Task task) = TaskUpdated;
+  
+  const factory TaskEvent.deleted(String taskId) = TaskDeleted;
+  
+  const factory TaskEvent.toggled(String taskId) = TaskToggled;
+  
+  const factory TaskEvent.searched(String query) = TaskSearched;
+  
+  const factory TaskEvent.filterChanged(TaskFilter filter) = TaskFilterChanged;
+  
+  const factory TaskEvent.sortChanged(TaskSortOption sortOption) = TaskSortChanged;
+  
+  const factory TaskEvent.priorityFilterChanged(TaskPriority? priority) = TaskPriorityFilterChanged;
+  
+  const factory TaskEvent.categoryFilterChanged(String? category) = TaskCategoryFilterChanged;
+  
+  const factory TaskEvent.dueDateFilterChanged(DateTime? dueDateFilter) = TaskDueDateFilterChanged;
+  
+  const factory TaskEvent.bulkToggle({
+    required List<String> taskIds,
+    required bool isCompleted,
+  }) = TaskBulkToggle;
+  
+  const factory TaskEvent.bulkDelete(List<String> taskIds) = TaskBulkDelete;
+  
+  const factory TaskEvent.bulkUpdatePriority({
+    required List<String> taskIds,
+    required TaskPriority priority,
+  }) = TaskBulkUpdatePriority;
+  
+  const factory TaskEvent.bulkUpdateCategory({
+    required List<String> taskIds,
+    required String category,
+  }) = TaskBulkUpdateCategory;
+  
+  const factory TaskEvent.refresh() = TaskRefresh;
 }
-
-class TaskInitialized extends TaskEvent {}
-
-class TaskAdded extends TaskEvent {
-  final String title;
-  final String description;
-  final TaskPriority priority;
-  final DateTime? dueDate;
-  final String category;
-
-  const TaskAdded({
-    required this.title,
-    required this.description,
-    this.priority = TaskPriority.medium,
-    this.dueDate,
-    this.category = 'General',
-  });
-
-  @override
-  List<Object?> get props => [title, description, priority, dueDate, category];
-}
-
-class TaskUpdated extends TaskEvent {
-  final Task task;
-
-  const TaskUpdated(this.task);
-
-  @override
-  List<Object?> get props => [task];
-}
-
-class TaskDeleted extends TaskEvent {
-  final String taskId;
-
-  const TaskDeleted(this.taskId);
-
-  @override
-  List<Object?> get props => [taskId];
-}
-
-class TaskToggled extends TaskEvent {
-  final String taskId;
-
-  const TaskToggled(this.taskId);
-
-  @override
-  List<Object?> get props => [taskId];
-}
-
-class TaskSearched extends TaskEvent {
-  final String query;
-
-  const TaskSearched(this.query);
-
-  @override
-  List<Object?> get props => [query];
-}
-
-class TaskFilterChanged extends TaskEvent {
-  final TaskFilter filter;
-
-  const TaskFilterChanged(this.filter);
-
-  @override
-  List<Object?> get props => [filter];
-}
-
-class TaskSortChanged extends TaskEvent {
-  final TaskSortOption sortOption;
-
-  const TaskSortChanged(this.sortOption);
-
-  @override
-  List<Object?> get props => [sortOption];
-}
-
-class TaskPriorityFilterChanged extends TaskEvent {
-  final TaskPriority? priority;
-
-  const TaskPriorityFilterChanged(this.priority);
-
-  @override
-  List<Object?> get props => [priority];
-}
-
-class TaskCategoryFilterChanged extends TaskEvent {
-  final String? category;
-
-  const TaskCategoryFilterChanged(this.category);
-
-  @override
-  List<Object?> get props => [category];
-}
-
-class TaskDueDateFilterChanged extends TaskEvent {
-  final DateTime? dueDateFilter;
-
-  const TaskDueDateFilterChanged(this.dueDateFilter);
-
-  @override
-  List<Object?> get props => [dueDateFilter];
-}
-
-class TaskBulkToggle extends TaskEvent {
-  final List<String> taskIds;
-  final bool isCompleted;
-
-  const TaskBulkToggle({
-    required this.taskIds,
-    required this.isCompleted,
-  });
-
-  @override
-  List<Object?> get props => [taskIds, isCompleted];
-}
-
-class TaskBulkDelete extends TaskEvent {
-  final List<String> taskIds;
-
-  const TaskBulkDelete(this.taskIds);
-
-  @override
-  List<Object?> get props => [taskIds];
-}
-
-class TaskBulkUpdatePriority extends TaskEvent {
-  final List<String> taskIds;
-  final TaskPriority priority;
-
-  const TaskBulkUpdatePriority({
-    required this.taskIds,
-    required this.priority,
-  });
-
-  @override
-  List<Object?> get props => [taskIds, priority];
-}
-
-class TaskBulkUpdateCategory extends TaskEvent {
-  final List<String> taskIds;
-  final String category;
-
-  const TaskBulkUpdateCategory({
-    required this.taskIds,
-    required this.category,
-  });
-
-  @override
-  List<Object?> get props => [taskIds, category];
-}
-
-class TaskRefresh extends TaskEvent {}
 
 // States
-abstract class TaskState extends Equatable {
-  const TaskState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class TaskInitial extends TaskState {}
-
-class TaskLoading extends TaskState {}
-
-class TaskLoaded extends TaskState {
-  final List<Task> tasks;
-  final List<Task> filteredTasks;
-  final TaskFilter currentFilter;
-  final TaskSortOption currentSort;
-  final TaskPriority? selectedPriority;
-  final String? selectedCategory;
-  final DateTime? selectedDueDateFilter;
-  final String searchQuery;
-  final List<String> categories;
-  final Map<String, int> statistics;
-
-  const TaskLoaded({
-    required this.tasks,
-    required this.filteredTasks,
-    this.currentFilter = TaskFilter.all,
-    this.currentSort = TaskSortOption.creationDate,
-    this.selectedPriority,
-    this.selectedCategory,
-    this.selectedDueDateFilter,
-    this.searchQuery = '',
-    this.categories = const [],
-    this.statistics = const {},
-  });
-
-  @override
-  List<Object?> get props => [
-    tasks,
-    filteredTasks,
-    currentFilter,
-    currentSort,
-    selectedPriority,
-    selectedCategory,
-    selectedDueDateFilter,
-    searchQuery,
-    categories,
-    statistics,
-  ];
-
-  TaskLoaded copyWith({
-    List<Task>? tasks,
-    List<Task>? filteredTasks,
-    TaskFilter? currentFilter,
-    TaskSortOption? currentSort,
+@freezed
+class TaskState with _$TaskState {
+  const factory TaskState.initial() = TaskInitial;
+  
+  const factory TaskState.loading() = TaskLoading;
+  
+  const factory TaskState.loaded({
+    required List<Task> tasks,
+    required List<Task> filteredTasks,
+    @Default(TaskFilter.all) TaskFilter currentFilter,
+    @Default(TaskSortOption.creationDate) TaskSortOption currentSort,
     TaskPriority? selectedPriority,
     String? selectedCategory,
     DateTime? selectedDueDateFilter,
-    String? searchQuery,
-    List<String>? categories,
-    Map<String, int>? statistics,
-  }) {
-    return TaskLoaded(
-      tasks: tasks ?? this.tasks,
-      filteredTasks: filteredTasks ?? this.filteredTasks,
-      currentFilter: currentFilter ?? this.currentFilter,
-      currentSort: currentSort ?? this.currentSort,
-      selectedPriority: selectedPriority ?? this.selectedPriority,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      selectedDueDateFilter: selectedDueDateFilter ?? this.selectedDueDateFilter,
-      searchQuery: searchQuery ?? this.searchQuery,
-      categories: categories ?? this.categories,
-      statistics: statistics ?? this.statistics,
-    );
-  }
-}
-
-class TaskError extends TaskState {
-  final String message;
-
-  const TaskError(this.message);
-
-  @override
-  List<Object?> get props => [message];
+    @Default('') String searchQuery,
+    @Default([]) List<String> categories,
+    @Default({}) Map<String, int> statistics,
+  }) = TaskLoaded;
+  
+  const factory TaskState.error(String message) = TaskError;
 }
 
 enum TaskFilter { all, active, completed }
+enum TaskSortOption { creationDate, dueDate, priority, title }
 
 // BLoC
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
@@ -258,68 +88,76 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   TaskBloc({required TaskRepository taskRepository})
       : _taskRepository = taskRepository,
-        super(TaskInitial()) {
-    on<TaskInitialized>(_onTaskInitialized);
-    on<TaskAdded>(_onTaskAdded);
-    on<TaskUpdated>(_onTaskUpdated);
-    on<TaskDeleted>(_onTaskDeleted);
-    on<TaskToggled>(_onTaskToggled);
-    on<TaskSearched>(_onTaskSearched);
-    on<TaskFilterChanged>(_onTaskFilterChanged);
-    on<TaskSortChanged>(_onTaskSortChanged);
-    on<TaskPriorityFilterChanged>(_onTaskPriorityFilterChanged);
-    on<TaskCategoryFilterChanged>(_onTaskCategoryFilterChanged);
-    on<TaskDueDateFilterChanged>(_onTaskDueDateFilterChanged);
-    on<TaskBulkToggle>(_onTaskBulkToggle);
-    on<TaskBulkDelete>(_onTaskBulkDelete);
-    on<TaskBulkUpdatePriority>(_onTaskBulkUpdatePriority);
-    on<TaskBulkUpdateCategory>(_onTaskBulkUpdateCategory);
-    on<TaskRefresh>(_onTaskRefresh);
+        super(const TaskState.initial()) {
+    on<TaskEvent>(_onEvent);
   }
 
-  Future<void> _onTaskInitialized(
-    TaskInitialized event,
-    Emitter<TaskState> emit,
-  ) async {
-    emit(TaskLoading());
+  Future<void> _onEvent(TaskEvent event, Emitter<TaskState> emit) async {
+    await event.when(
+      initialized: () => _onTaskInitialized(emit),
+      added: (title, description, priority, dueDate, category) => 
+        _onTaskAdded(title, description, priority, dueDate, category, emit),
+      updated: (task) => _onTaskUpdated(task, emit),
+      deleted: (taskId) => _onTaskDeleted(taskId, emit),
+      toggled: (taskId) => _onTaskToggled(taskId, emit),
+      searched: (query) => _onTaskSearched(query, emit),
+      filterChanged: (filter) => _onTaskFilterChanged(filter, emit),
+      sortChanged: (sortOption) => _onTaskSortChanged(sortOption, emit),
+      priorityFilterChanged: (priority) => _onTaskPriorityFilterChanged(priority, emit),
+      categoryFilterChanged: (category) => _onTaskCategoryFilterChanged(category, emit),
+      dueDateFilterChanged: (dueDateFilter) => _onTaskDueDateFilterChanged(dueDateFilter, emit),
+      bulkToggle: (taskIds, isCompleted) => _onTaskBulkToggle(taskIds, isCompleted, emit),
+      bulkDelete: (taskIds) => _onTaskBulkDelete(taskIds, emit),
+      bulkUpdatePriority: (taskIds, priority) => _onTaskBulkUpdatePriority(taskIds, priority, emit),
+      bulkUpdateCategory: (taskIds, category) => _onTaskBulkUpdateCategory(taskIds, category, emit),
+      refresh: () => _onTaskRefresh(emit),
+    );
+  }
+
+  Future<void> _onTaskInitialized(Emitter<TaskState> emit) async {
+    emit(const TaskState.loading());
     
     try {
       final tasks = await _taskRepository.getAllTasks();
       final categories = await _taskRepository.getAllCategories();
       final statistics = await _taskRepository.getTaskStatistics();
       
-      emit(TaskLoaded(
+      emit(TaskState.loaded(
         tasks: tasks,
         filteredTasks: tasks,
         categories: categories,
         statistics: statistics,
       ));
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
   Future<void> _onTaskAdded(
-    TaskAdded event,
+    String title,
+    String description,
+    TaskPriority priority,
+    DateTime? dueDate,
+    String category,
     Emitter<TaskState> emit,
   ) async {
     try {
       final task = Task(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: event.title,
-        description: event.description,
+        title: title,
+        description: description,
         isCompleted: false,
-        priority: event.priority,
-        dueDate: event.dueDate,
-        category: event.category,
+        priority: priority,
+        dueDate: dueDate,
+        category: category,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
       await _taskRepository.createTask(task);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
+      final currentState = state;
+      if (currentState is TaskLoaded) {
         final updatedTasks = [...currentState.tasks, task];
         final filteredTasks = await _applyFiltersAndSort(updatedTasks, currentState);
         final statistics = await _taskRepository.getTaskStatistics();
@@ -331,21 +169,18 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskUpdated(
-    TaskUpdated event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskUpdated(Task task, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.updateTask(event.task);
+      await _taskRepository.updateTask(task);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
-        final updatedTasks = currentState.tasks.map((task) {
-          return task.id == event.task.id ? event.task : task;
+      final currentState = state;
+      if (currentState is TaskLoaded) {
+        final updatedTasks = currentState.tasks.map((t) {
+          return t.id == task.id ? task : t;
         }).toList();
         
         final filteredTasks = await _applyFiltersAndSort(updatedTasks, currentState);
@@ -358,20 +193,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskDeleted(
-    TaskDeleted event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskDeleted(String taskId, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.deleteTask(event.taskId);
+      await _taskRepository.deleteTask(taskId);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
-        final updatedTasks = currentState.tasks.where((task) => task.id != event.taskId).toList();
+      final currentState = state;
+      if (currentState is TaskLoaded) {
+        final updatedTasks = currentState.tasks.where((task) => task.id != taskId).toList();
         final filteredTasks = await _applyFiltersAndSort(updatedTasks, currentState);
         final statistics = await _taskRepository.getTaskStatistics();
         
@@ -382,24 +214,21 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskToggled(
-    TaskToggled event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskToggled(String taskId, Emitter<TaskState> emit) async {
     try {
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
-        final task = currentState.tasks.firstWhere((task) => task.id == event.taskId);
+      final currentState = state;
+      if (currentState is TaskLoaded) {
+        final task = currentState.tasks.firstWhere((task) => task.id == taskId);
         final updatedTask = task.copyWith(isCompleted: !task.isCompleted);
         
         await _taskRepository.updateTask(updatedTask);
         
         final updatedTasks = currentState.tasks.map((t) {
-          return t.id == event.taskId ? updatedTask : t;
+          return t.id == taskId ? updatedTask : t;
         }).toList();
         
         final filteredTasks = await _applyFiltersAndSort(updatedTasks, currentState);
@@ -412,112 +241,109 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskSearched(
-    TaskSearched event,
-    Emitter<TaskState> emit,
-  ) async {
-    if (state is TaskLoaded) {
-      final currentState = state as TaskLoaded;
-      final filteredTasks = await _applyFiltersAndSort(currentState.tasks, currentState.copyWith(searchQuery: event.query));
+  Future<void> _onTaskSearched(String query, Emitter<TaskState> emit) async {
+    final currentState = state;
+    if (currentState is TaskLoaded) {
+      final filteredTasks = await _applyFiltersAndSort(
+        currentState.tasks, 
+        currentState.copyWith(searchQuery: query)
+      );
       
       emit(currentState.copyWith(
         filteredTasks: filteredTasks,
-        searchQuery: event.query,
+        searchQuery: query,
       ));
     }
   }
 
-  Future<void> _onTaskFilterChanged(
-    TaskFilterChanged event,
-    Emitter<TaskState> emit,
-  ) async {
-    if (state is TaskLoaded) {
-      final currentState = state as TaskLoaded;
-      final filteredTasks = await _applyFiltersAndSort(currentState.tasks, currentState.copyWith(currentFilter: event.filter));
+  Future<void> _onTaskFilterChanged(TaskFilter filter, Emitter<TaskState> emit) async {
+    final currentState = state;
+    if (currentState is TaskLoaded) {
+      final filteredTasks = await _applyFiltersAndSort(
+        currentState.tasks, 
+        currentState.copyWith(currentFilter: filter)
+      );
       
       emit(currentState.copyWith(
         filteredTasks: filteredTasks,
-        currentFilter: event.filter,
+        currentFilter: filter,
       ));
     }
   }
 
-  Future<void> _onTaskSortChanged(
-    TaskSortChanged event,
-    Emitter<TaskState> emit,
-  ) async {
-    if (state is TaskLoaded) {
-      final currentState = state as TaskLoaded;
-      final filteredTasks = await _applyFiltersAndSort(currentState.tasks, currentState.copyWith(currentSort: event.sortOption));
+  Future<void> _onTaskSortChanged(TaskSortOption sortOption, Emitter<TaskState> emit) async {
+    final currentState = state;
+    if (currentState is TaskLoaded) {
+      final filteredTasks = await _applyFiltersAndSort(
+        currentState.tasks, 
+        currentState.copyWith(currentSort: sortOption)
+      );
       
       emit(currentState.copyWith(
         filteredTasks: filteredTasks,
-        currentSort: event.sortOption,
+        currentSort: sortOption,
       ));
     }
   }
 
-  Future<void> _onTaskPriorityFilterChanged(
-    TaskPriorityFilterChanged event,
-    Emitter<TaskState> emit,
-  ) async {
-    if (state is TaskLoaded) {
-      final currentState = state as TaskLoaded;
-      final filteredTasks = await _applyFiltersAndSort(currentState.tasks, currentState.copyWith(selectedPriority: event.priority));
+  Future<void> _onTaskPriorityFilterChanged(TaskPriority? priority, Emitter<TaskState> emit) async {
+    final currentState = state;
+    if (currentState is TaskLoaded) {
+      final filteredTasks = await _applyFiltersAndSort(
+        currentState.tasks, 
+        currentState.copyWith(selectedPriority: priority)
+      );
       
       emit(currentState.copyWith(
         filteredTasks: filteredTasks,
-        selectedPriority: event.priority,
+        selectedPriority: priority,
       ));
     }
   }
 
-  Future<void> _onTaskCategoryFilterChanged(
-    TaskCategoryFilterChanged event,
-    Emitter<TaskState> emit,
-  ) async {
-    if (state is TaskLoaded) {
-      final currentState = state as TaskLoaded;
-      final filteredTasks = await _applyFiltersAndSort(currentState.tasks, currentState.copyWith(selectedCategory: event.category));
+  Future<void> _onTaskCategoryFilterChanged(String? category, Emitter<TaskState> emit) async {
+    final currentState = state;
+    if (currentState is TaskLoaded) {
+      final filteredTasks = await _applyFiltersAndSort(
+        currentState.tasks, 
+        currentState.copyWith(selectedCategory: category)
+      );
       
       emit(currentState.copyWith(
         filteredTasks: filteredTasks,
-        selectedCategory: event.category,
+        selectedCategory: category,
       ));
     }
   }
 
-  Future<void> _onTaskDueDateFilterChanged(
-    TaskDueDateFilterChanged event,
-    Emitter<TaskState> emit,
-  ) async {
-    if (state is TaskLoaded) {
-      final currentState = state as TaskLoaded;
-      final filteredTasks = await _applyFiltersAndSort(currentState.tasks, currentState.copyWith(selectedDueDateFilter: event.dueDateFilter));
+  Future<void> _onTaskDueDateFilterChanged(DateTime? dueDateFilter, Emitter<TaskState> emit) async {
+    final currentState = state;
+    if (currentState is TaskLoaded) {
+      final filteredTasks = await _applyFiltersAndSort(
+        currentState.tasks, 
+        currentState.copyWith(selectedDueDateFilter: dueDateFilter)
+      );
       
       emit(currentState.copyWith(
         filteredTasks: filteredTasks,
-        selectedDueDateFilter: event.dueDateFilter,
+        selectedDueDateFilter: dueDateFilter,
       ));
     }
   }
 
-  Future<void> _onTaskBulkToggle(
-    TaskBulkToggle event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskBulkToggle(List<String> taskIds, bool isCompleted, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.toggleMultipleTasks(event.taskIds, event.isCompleted);
+      await _taskRepository.toggleMultipleTasks(taskIds, isCompleted);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
+      final currentState = state;
+      if (currentState is TaskLoaded) {
         final updatedTasks = currentState.tasks.map((task) {
-          if (event.taskIds.contains(task.id)) {
-            return task.copyWith(isCompleted: event.isCompleted);
+          if (taskIds.contains(task.id)) {
+            return task.copyWith(isCompleted: isCompleted);
           }
           return task;
         }).toList();
@@ -532,20 +358,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskBulkDelete(
-    TaskBulkDelete event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskBulkDelete(List<String> taskIds, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.deleteMultipleTasks(event.taskIds);
+      await _taskRepository.deleteMultipleTasks(taskIds);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
-        final updatedTasks = currentState.tasks.where((task) => !event.taskIds.contains(task.id)).toList();
+      final currentState = state;
+      if (currentState is TaskLoaded) {
+        final updatedTasks = currentState.tasks.where((task) => !taskIds.contains(task.id)).toList();
         final filteredTasks = await _applyFiltersAndSort(updatedTasks, currentState);
         final statistics = await _taskRepository.getTaskStatistics();
         
@@ -556,22 +379,19 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskBulkUpdatePriority(
-    TaskBulkUpdatePriority event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskBulkUpdatePriority(List<String> taskIds, TaskPriority priority, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.updateMultipleTaskPriorities(event.taskIds, event.priority);
+      await _taskRepository.updateMultipleTaskPriorities(taskIds, priority);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
+      final currentState = state;
+      if (currentState is TaskLoaded) {
         final updatedTasks = currentState.tasks.map((task) {
-          if (event.taskIds.contains(task.id)) {
-            return task.copyWith(priority: event.priority);
+          if (taskIds.contains(task.id)) {
+            return task.copyWith(priority: priority);
           }
           return task;
         }).toList();
@@ -584,22 +404,19 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskBulkUpdateCategory(
-    TaskBulkUpdateCategory event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskBulkUpdateCategory(List<String> taskIds, String category, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.updateMultipleTaskCategories(event.taskIds, event.category);
+      await _taskRepository.updateMultipleTaskCategories(taskIds, category);
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
+      final currentState = state;
+      if (currentState is TaskLoaded) {
         final updatedTasks = currentState.tasks.map((task) {
-          if (event.taskIds.contains(task.id)) {
-            return task.copyWith(category: event.category);
+          if (taskIds.contains(task.id)) {
+            return task.copyWith(category: category);
           }
           return task;
         }).toList();
@@ -612,21 +429,18 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 
-  Future<void> _onTaskRefresh(
-    TaskRefresh event,
-    Emitter<TaskState> emit,
-  ) async {
+  Future<void> _onTaskRefresh(Emitter<TaskState> emit) async {
     try {
       final tasks = await _taskRepository.getAllTasks();
       final categories = await _taskRepository.getAllCategories();
       final statistics = await _taskRepository.getTaskStatistics();
       
-      if (state is TaskLoaded) {
-        final currentState = state as TaskLoaded;
+      final currentState = state;
+      if (currentState is TaskLoaded) {
         final filteredTasks = await _applyFiltersAndSort(tasks, currentState);
         
         emit(currentState.copyWith(
@@ -637,7 +451,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         ));
       }
     } catch (e) {
-      emit(TaskError(e.toString()));
+      emit(TaskState.error(e.toString()));
     }
   }
 

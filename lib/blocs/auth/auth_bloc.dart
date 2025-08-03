@@ -37,6 +37,19 @@ class AuthVerifyOTP extends AuthEvent {
   List<Object?> get props => [phoneNumber, otp, expectedOTP];
 }
 
+class AuthEmailLogin extends AuthEvent {
+  final String email;
+  final String password;
+
+  const AuthEmailLogin({
+    required this.email,
+    required this.password,
+  });
+
+  @override
+  List<Object?> get props => [email, password];
+}
+
 class AuthLogout extends AuthEvent {}
 
 class AuthClearData extends AuthEvent {}
@@ -71,14 +84,16 @@ class AuthOTPSent extends AuthState {
 class AuthAuthenticated extends AuthState {
   final String userId;
   final String phoneNumber;
+  final String? email;
 
   const AuthAuthenticated({
     required this.userId,
     required this.phoneNumber,
+    this.email,
   });
 
   @override
-  List<Object?> get props => [userId, phoneNumber];
+  List<Object?> get props => [userId, phoneNumber, email];
 }
 
 class AuthError extends AuthState {
@@ -100,6 +115,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthInitialized>(_onAuthInitialized);
     on<AuthGenerateOTP>(_onAuthGenerateOTP);
     on<AuthVerifyOTP>(_onAuthVerifyOTP);
+    on<AuthEmailLogin>(_onAuthEmailLogin);
     on<AuthLogout>(_onAuthLogout);
     on<AuthClearData>(_onAuthClearData);
   }
@@ -175,6 +191,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         ));
       } else {
         emit(const AuthError('Invalid OTP'));
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> _onAuthEmailLogin(
+    AuthEmailLogin event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    
+    try {
+      final success = await _authService.verifyEmailLogin(
+        event.email,
+        event.password,
+      );
+      
+      if (success) {
+        final userId = await _authService.getUserId();
+        final email = await _authService.getUserEmail();
+        emit(AuthAuthenticated(
+          userId: userId ?? '',
+          phoneNumber: '', // Empty for email login
+          email: email,
+        ));
+      } else {
+        emit(const AuthError('Invalid email or password'));
       }
     } catch (e) {
       emit(AuthError(e.toString()));

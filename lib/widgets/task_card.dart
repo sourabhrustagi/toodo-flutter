@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import '../models/task.dart';
 
 class TaskCard extends StatelessWidget {
@@ -19,7 +20,7 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final priorityColor = Color(Task.priorityColors[task.priority]!);
+    final priorityColor = Color(TaskX.priorityColors[task.priority]!);
     
     return Slidable(
       endActionPane: ActionPane(
@@ -278,13 +279,7 @@ class TaskCard extends StatelessWidget {
       return 'Tomorrow';
     }
     
-    final difference = dueDay.difference(today).inDays;
-    if (difference < 0) {
-      return '${difference.abs()} days ago';
-    } else if (difference <= 7) {
-      return 'In $difference days';
-    } else {
-      return '${dueDate.day}/${dueDate.month}/${dueDate.year}';
-    }
+    // Use timeago for relative time display
+    return timeago.format(dueDate, allowFromNow: true);
   }
 } 

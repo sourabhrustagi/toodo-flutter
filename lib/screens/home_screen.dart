@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:lottie/lottie.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/task/task_bloc.dart';
 import '../models/task.dart';
@@ -163,7 +166,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: BlocBuilder<TaskBloc, TaskState>(
               builder: (context, state) {
                 if (state is TaskLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Loading tasks...',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 if (state is TaskLoaded) {
@@ -231,7 +248,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                return const Center(child: CircularProgressIndicator());
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading...',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ),
@@ -307,13 +338,13 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Color(Task.priorityColors[task.priority]!).withOpacity(0.1),
+            color: Color(TaskX.priorityColors[task.priority]!).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             task.priority.name.toUpperCase(),
             style: TextStyle(
-              color: Color(Task.priorityColors[task.priority]!),
+              color: Color(TaskX.priorityColors[task.priority]!),
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -424,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Priority'),
               leading: const Icon(Icons.priority_high),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskSortChanged(TaskSortOption.priority));
+                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.priority));
                 Navigator.of(context).pop();
               },
             ),
@@ -432,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Due Date'),
               leading: const Icon(Icons.schedule),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskSortChanged(TaskSortOption.dueDate));
+                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.dueDate));
                 Navigator.of(context).pop();
               },
             ),
@@ -440,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Creation Date'),
               leading: const Icon(Icons.create),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskSortChanged(TaskSortOption.creationDate));
+                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.creationDate));
                 Navigator.of(context).pop();
               },
             ),
@@ -448,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Alphabetical'),
               leading: const Icon(Icons.sort_by_alpha),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskSortChanged(TaskSortOption.alphabetical));
+                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.title));
                 Navigator.of(context).pop();
               },
             ),

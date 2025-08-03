@@ -1,5 +1,6 @@
 import '../data/database_helper.dart';
 import '../models/task.dart';
+import '../blocs/task/task_bloc.dart';
 
 class TaskRepository {
   final DatabaseHelper _databaseHelper = DatabaseHelper();
@@ -133,7 +134,7 @@ class TaskRepository {
       case TaskSortOption.creationDate:
         tasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
-      case TaskSortOption.alphabetical:
+      case TaskSortOption.title:
         tasks.sort((a, b) => a.title.compareTo(b.title));
         break;
     }
@@ -205,9 +206,4 @@ class TaskRepository {
   }
 }
 
-enum TaskSortOption {
-  priority,
-  dueDate,
-  creationDate,
-  alphabetical,
-} 
+// TaskSortOption enum is defined in task_bloc.dart 

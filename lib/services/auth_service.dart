@@ -9,6 +9,7 @@ class AuthService {
   static const String _isLoggedInKey = 'isLoggedIn';
   static const String _userIdKey = 'userId';
   static const String _userPhoneKey = 'userPhone';
+  static const String _userEmailKey = 'userEmail';
 
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,6 +24,11 @@ class AuthService {
   Future<String?> getUserPhone() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userPhoneKey);
+  }
+
+  Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userEmailKey);
   }
 
   Future<String> generateOTP() async {
@@ -41,6 +47,17 @@ class AuthService {
     throw Exception('Invalid OTP. Please enter 123456');
   }
 
+  Future<bool> verifyEmailLogin(String email, String password) async {
+    // In a real app, you would verify email/password with a server
+    // For testing, accept any email with password "password123"
+    if (password == 'password123') {
+      await _saveEmailLoginState(email);
+      return true;
+    }
+    // Throw an error for invalid credentials
+    throw Exception('Invalid email or password. Use "password123" for testing');
+  }
+
   Future<void> _saveLoginState(String phoneNumber) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_isLoggedInKey, true);
@@ -48,11 +65,19 @@ class AuthService {
     await prefs.setString(_userPhoneKey, phoneNumber);
   }
 
+  Future<void> _saveEmailLoginState(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isLoggedInKey, true);
+    await prefs.setString(_userIdKey, 'user_${DateTime.now().millisecondsSinceEpoch}');
+    await prefs.setString(_userEmailKey, email);
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_isLoggedInKey, false);
     await prefs.remove(_userIdKey);
     await prefs.remove(_userPhoneKey);
+    await prefs.remove(_userEmailKey);
   }
 
   Future<void> clearAllData() async {

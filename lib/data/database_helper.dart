@@ -84,7 +84,7 @@ class DatabaseHelper {
   // Task CRUD operations
   Future<int> insertTask(Task task) async {
     final db = await database;
-    return await db.insert('tasks', task.toJson());
+    return await db.insert('tasks', task.toDatabaseJson());
   }
 
   Future<List<Task>> getAllTasks() async {
@@ -93,7 +93,7 @@ class DatabaseHelper {
       'tasks',
       orderBy: 'createdAt DESC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   Future<Task?> getTask(String id) async {
@@ -104,7 +104,7 @@ class DatabaseHelper {
       whereArgs: [id],
     );
     if (maps.isNotEmpty) {
-      return Task.fromJson(maps.first);
+      return Task.fromDatabaseJson(maps.first);
     }
     return null;
   }
@@ -113,7 +113,7 @@ class DatabaseHelper {
     final db = await database;
     return await db.update(
       'tasks',
-      task.toJson(),
+      task.toDatabaseJson(),
       where: 'id = ?',
       whereArgs: [task.id],
     );
@@ -142,7 +142,7 @@ class DatabaseHelper {
       whereArgs: [category],
       orderBy: 'createdAt DESC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   Future<List<Task>> getTasksByPriority(TaskPriority priority) async {
@@ -153,7 +153,7 @@ class DatabaseHelper {
       whereArgs: [priority.index],
       orderBy: 'createdAt DESC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   Future<List<Task>> getCompletedTasks() async {
@@ -164,7 +164,7 @@ class DatabaseHelper {
       whereArgs: [1],
       orderBy: 'updatedAt DESC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   Future<List<Task>> getPendingTasks() async {
@@ -175,7 +175,7 @@ class DatabaseHelper {
       whereArgs: [0],
       orderBy: 'dueDate ASC, createdAt DESC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   Future<List<Task>> getOverdueTasks() async {
@@ -187,7 +187,7 @@ class DatabaseHelper {
       whereArgs: [now, 0],
       orderBy: 'dueDate ASC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   Future<List<Task>> searchTasks(String query) async {
@@ -198,7 +198,7 @@ class DatabaseHelper {
       whereArgs: ['%$query%', '%$query%'],
       orderBy: 'createdAt DESC',
     );
-    return List.generate(maps.length, (i) => Task.fromJson(maps[i]));
+    return List.generate(maps.length, (i) => Task.fromDatabaseJson(maps[i]));
   }
 
   // Category operations
