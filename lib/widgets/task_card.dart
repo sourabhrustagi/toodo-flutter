@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../models/task.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
-  final VoidCallback onToggle;
+  final VoidCallback? onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const TaskCard({
     super.key,
     required this.task,
-    required this.onToggle,
+    this.onToggle,
     required this.onEdit,
     required this.onDelete,
   });
@@ -59,7 +60,7 @@ class TaskCard extends StatelessWidget {
               : BorderSide.none,
         ),
         child: InkWell(
-          onTap: onToggle,
+          onTap: () => context.go('/task/${task.id}'),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -82,7 +83,7 @@ class TaskCard extends StatelessWidget {
                     // Checkbox
                     Checkbox(
                       value: task.isCompleted,
-                      onChanged: (_) => onToggle(),
+                      onChanged: (_) => onToggle?.call(),
                       activeColor: theme.colorScheme.primary,
                     ),
                     

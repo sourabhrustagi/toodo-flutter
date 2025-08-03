@@ -83,6 +83,12 @@ dependencies:
   # Date and time utilities
   timeago: ^3.6.1
   
+  # Shimmer loading effect
+  shimmer: ^3.0.0
+  
+  # Secure storage
+  flutter_secure_storage: ^9.0.0
+  
   # Form validation
   form_validator: ^2.1.1
   

@@ -5,6 +5,7 @@ import '../blocs/auth/auth_bloc.dart';
 import '../screens/main_screen.dart';
 import '../screens/login_screen_bloc.dart';
 import '../screens/feedback_screen.dart';
+import '../screens/task_detail_screen.dart';
 
 // Simple refresh notifier for GoRouter
 class RouterRefreshNotifier extends ChangeNotifier {
@@ -40,7 +41,8 @@ class AppRouter {
       // If we're not authenticated and trying to access protected routes, redirect to login
       if (authState is AuthUnauthenticated && 
           (state.matchedLocation == '/home' || 
-           state.matchedLocation == '/feedback')) {
+           state.matchedLocation == '/feedback' ||
+           state.matchedLocation.startsWith('/task/'))) {
         print('Router redirect - Unauthenticated user on protected route, redirecting to login');
         return '/login';
       }
@@ -63,15 +65,18 @@ class AppRouter {
         return null;
       }
       
-      // Default case: if we're authenticated and not on a specific route, go to home
-      if (authState is AuthAuthenticated) {
-        print('Router redirect - Authenticated user, redirecting to home');
+      // If we're authenticated and on any route other than home, feedback, or task detail, redirect to home
+      if (authState is AuthAuthenticated && 
+          state.matchedLocation != '/home' && 
+          state.matchedLocation != '/feedback' &&
+          !state.matchedLocation.startsWith('/task/')) {
+        print('Router redirect - Authenticated user on non-home route, redirecting to home');
         return '/home';
       }
       
-      // Default case: if we're not authenticated and not on login, go to login
-      if (authState is AuthUnauthenticated) {
-        print('Router redirect - Unauthenticated user, redirecting to login');
+      // If we're not authenticated and not on login, go to login
+      if (authState is AuthUnauthenticated && state.matchedLocation != '/login') {
+        print('Router redirect - Unauthenticated user on non-login route, redirecting to login');
         return '/login';
       }
       
@@ -112,6 +117,14 @@ class AppRouter {
         path: '/feedback',
         name: 'feedback',
         builder: (context, state) => const FeedbackScreen(),
+      ),
+      GoRoute(
+        path: '/task/:id',
+        name: 'task-detail',
+        builder: (context, state) {
+          final taskId = state.pathParameters['id']!;
+          return TaskDetailScreen(taskId: taskId);
+        },
       ),
     ],
     errorBuilder: (context, state) {

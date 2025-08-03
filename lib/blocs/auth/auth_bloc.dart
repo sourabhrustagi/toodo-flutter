@@ -189,6 +189,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           userId: userId ?? '',
           phoneNumber: phoneNumber ?? '',
         ));
+        // Trigger router refresh after successful authentication
+        AppRouter.refreshNotifier.refresh();
       } else {
         emit(const AuthError('Invalid OTP'));
       }
@@ -217,6 +219,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           phoneNumber: '', // Empty for email login
           email: email,
         ));
+        // Trigger router refresh after successful authentication
+        AppRouter.refreshNotifier.refresh();
       } else {
         emit(const AuthError('Invalid email or password'));
       }
@@ -234,6 +238,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await _authService.logout();
       emit(AuthUnauthenticated());
+      // Trigger router refresh after logout
+      AppRouter.refreshNotifier.refresh();
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -248,6 +254,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await _authService.clearAllData();
       emit(AuthUnauthenticated());
+      // Trigger router refresh after clearing data
+      AppRouter.refreshNotifier.refresh();
     } catch (e) {
       emit(AuthError(e.toString()));
     }

@@ -331,7 +331,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           priority: _selectedPriority,
           dueDate: _hasDueDate ? _selectedDate : null,
         );
-        context.read<TaskBloc>().add(TaskUpdated(updatedTask));
+        context.read<TaskBloc>().add(TaskEvent.updated(updatedTask));
       } else {
         // Create new task
         final newTask = Task(
@@ -344,7 +344,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        context.read<TaskBloc>().add(TaskAdded(
+        context.read<TaskBloc>().add(TaskEvent.added(
           title: newTask.title,
           description: newTask.description,
           priority: newTask.priority,

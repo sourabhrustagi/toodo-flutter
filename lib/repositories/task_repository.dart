@@ -7,22 +7,32 @@ class TaskRepository {
 
   // Basic CRUD operations
   Future<void> createTask(Task task) async {
+    // Simulate API call with 1 second delay
+    await Future.delayed(const Duration(seconds: 1));
     await _databaseHelper.insertTask(task);
   }
 
   Future<List<Task>> getAllTasks() async {
+    // Simulate API call with 1 second delay
+    await Future.delayed(const Duration(seconds: 1));
     return await _databaseHelper.getAllTasks();
   }
 
   Future<Task?> getTask(String id) async {
+    // Simulate API call with 1 second delay
+    await Future.delayed(const Duration(seconds: 1));
     return await _databaseHelper.getTask(id);
   }
 
   Future<void> updateTask(Task task) async {
+    // Simulate API call with 1 second delay
+    await Future.delayed(const Duration(seconds: 1));
     await _databaseHelper.updateTask(task);
   }
 
   Future<void> deleteTask(String id) async {
+    // Simulate API call with 1 second delay
+    await Future.delayed(const Duration(seconds: 1));
     await _databaseHelper.deleteTask(id);
   }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../widgets/shimmer_widget.dart';
 
 class LoginScreenBloc extends StatefulWidget {
   const LoginScreenBloc({super.key});

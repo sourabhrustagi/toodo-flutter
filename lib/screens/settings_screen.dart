@@ -71,123 +71,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(height: 24),
-            
-            // Notification Settings
-            _buildSectionHeader(context, 'Notifications'),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.notifications),
-                    title: const Text('Task Reminders'),
-                    subtitle: const Text('Get notified about due tasks'),
-                    trailing: Switch(
-                      value: true, // TODO: Implement notification settings
-                      onChanged: (value) {
-                        // TODO: Implement notification toggle
-                      },
-                    ),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.schedule),
-                    title: const Text('Due Date Alerts'),
-                    subtitle: const Text('Remind me before tasks are due'),
-                    trailing: Switch(
-                      value: true, // TODO: Implement notification settings
-                      onChanged: (value) {
-                        // TODO: Implement notification toggle
-                      },
-                    ),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.warning),
-                    title: const Text('Overdue Notifications'),
-                    subtitle: const Text('Alert me about overdue tasks'),
-                    trailing: Switch(
-                      value: true, // TODO: Implement notification settings
-                      onChanged: (value) {
-                        // TODO: Implement notification toggle
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Data Management
-            _buildSectionHeader(context, 'Data Management'),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.backup),
-                    title: const Text('Backup Data'),
-                    subtitle: const Text('Export your tasks'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // TODO: Implement data backup
-                      _showSnackBar(context, 'Backup feature coming soon!');
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.restore),
-                    title: const Text('Restore Data'),
-                    subtitle: const Text('Import your tasks'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // TODO: Implement data restore
-                      _showSnackBar(context, 'Restore feature coming soon!');
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.delete_forever),
-                    title: const Text('Clear All Data'),
-                    subtitle: const Text('Delete all tasks and settings'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () => _showClearDataDialog(context),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Privacy & Security
-            _buildSectionHeader(context, 'Privacy & Security'),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.security),
-                    title: const Text('Privacy Policy'),
-                    subtitle: const Text('Read our privacy policy'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // TODO: Open privacy policy
-                      _showSnackBar(context, 'Privacy policy coming soon!');
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.description),
-                    title: const Text('Terms of Service'),
-                    subtitle: const Text('Read our terms of service'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // TODO: Open terms of service
-                      _showSnackBar(context, 'Terms of service coming soon!');
-                    },
-                  ),
-                ],
-              ),
-            ),
+
             
             const SizedBox(height: 24),
             
@@ -203,23 +87,14 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const Divider(),
                   ListTile(
-                    leading: const Icon(Icons.bug_report),
-                    title: const Text('Report Bug'),
-                    subtitle: const Text('Help us improve the app'),
+                    leading: const Icon(Icons.feedback),
+                    title: const Text('Feedback'),
+                    subtitle: const Text('Share your thoughts with us'),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () => context.go('/feedback'),
                   ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.star),
-                    title: const Text('Rate App'),
-                    subtitle: const Text('Rate us on the app store'),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // TODO: Open app store rating
-                      _showSnackBar(context, 'Rating feature coming soon!');
-                    },
-                  ),
+
+
                 ],
               ),
             ),
@@ -252,9 +127,7 @@ class SettingsScreen extends StatelessWidget {
                     leading: const Icon(Icons.logout),
                     title: const Text('Logout'),
                     subtitle: const Text('Sign out of your account'),
-                    onTap: () {
-                      context.read<AuthBloc>().add(AuthLogout());
-                    },
+                    onTap: () => _showLogoutBottomSheet(context),
                   ),
                 ],
               ),
@@ -335,39 +208,116 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showClearDataDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear All Data'),
-        content: const Text(
-          'This will permanently delete all your tasks and settings. This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<AuthBloc>().add(AuthClearData());
-              Navigator.of(context).pop();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: const Text('Clear All Data'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showLogoutBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Icon
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.logout,
+                  color: Colors.red,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Title
+              Text(
+                'Logout',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              // Message
+              Text(
+                'Are you sure you want to logout?',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.read<AuthBloc>().add(AuthLogout());
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text('Logout'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       ),
     );
   }

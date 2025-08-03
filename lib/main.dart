@@ -81,7 +81,7 @@ class MyApp extends StatelessWidget {
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp.router(
-            title: 'Todo App',
+            title: 'todo-flt',
             theme: ThemeService().getLightTheme(),
             darkTheme: ThemeService().getDarkTheme(),
             themeMode: themeState is ThemeLoaded ? themeState.themeMode : ThemeMode.system,

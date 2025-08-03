@@ -11,6 +11,7 @@ import '../models/task.dart';
 import '../repositories/task_repository.dart';
 import '../widgets/task_card.dart';
 import '../widgets/add_task_dialog.dart';
+import '../widgets/shimmer_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,7 +22,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final RefreshController _refreshController = RefreshController();
-  final TextEditingController _searchController = TextEditingController();
   
   List<String> _selectedTaskIds = [];
   bool _isSelectionMode = false;
@@ -29,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _refreshController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -44,11 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
             : const Text('My Tasks'),
         actions: [
           if (!_isSelectionMode) ...[
-            // Search button
-            IconButton(
-              onPressed: () => _showSearchDialog(context),
-              icon: const Icon(Icons.search),
-            ),
             // Filter button
             IconButton(
               onPressed: () => _showFilterDialog(context),
@@ -59,10 +53,15 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => _showSortDialog(context),
               icon: const Icon(Icons.sort),
             ),
-            // Feedback button
+            // Message button
             IconButton(
-              onPressed: () => context.go('/feedback'),
-              icon: const Icon(Icons.feedback),
+              onPressed: () => _showMessageDialog(context),
+              icon: const Icon(Icons.message),
+            ),
+            // Exclamation button
+            IconButton(
+              onPressed: () => _showExclamationDialog(context),
+              icon: const Icon(Icons.error_outline),
             ),
           ] else ...[
             // Selection mode actions
@@ -79,32 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // Search bar
-          if (!_isSelectionMode) ...[
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search tasks...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      context.read<TaskBloc>().add(const TaskSearched(''));
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onChanged: (value) {
-                  context.read<TaskBloc>().add(TaskSearched(value));
-                },
-              ),
-            ),
-          ],
+
           
           // Bulk actions bar
           if (_isSelectionMode) ...[
@@ -193,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return SmartRefresher(
                     controller: _refreshController,
                     onRefresh: () async {
-                      context.read<TaskBloc>().add(TaskRefresh());
+                      context.read<TaskBloc>().add(const TaskEvent.refresh());
                       _refreshController.refreshCompleted();
                     },
                     child: ListView.builder(
@@ -239,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            context.read<TaskBloc>().add(TaskInitialized());
+                            context.read<TaskBloc>().add(const TaskEvent.initialized());
                           },
                           child: const Text('Retry'),
                         ),
@@ -248,21 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Loading...',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                return const TaskListShimmer(itemCount: 8);
               },
             ),
           ),
@@ -367,37 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSearchDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Search Tasks'),
-        content: TextField(
-          controller: _searchController,
-          decoration: const InputDecoration(
-            hintText: 'Enter search terms...',
-            prefixIcon: Icon(Icons.search),
-          ),
-          autofocus: true,
-          onChanged: (value) {
-            context.read<TaskBloc>().add(TaskSearched(value));
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Search'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showFilterDialog(BuildContext context) {
     showDialog(
@@ -411,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('All Tasks'),
               leading: const Icon(Icons.list),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskFilterChanged(TaskFilter.all));
+                context.read<TaskBloc>().add(const TaskEvent.filterChanged(TaskFilter.all));
                 Navigator.of(context).pop();
               },
             ),
@@ -419,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Active Tasks'),
               leading: const Icon(Icons.pending),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskFilterChanged(TaskFilter.active));
+                context.read<TaskBloc>().add(const TaskEvent.filterChanged(TaskFilter.active));
                 Navigator.of(context).pop();
               },
             ),
@@ -427,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Completed Tasks'),
               leading: const Icon(Icons.check_circle),
               onTap: () {
-                context.read<TaskBloc>().add(const TaskFilterChanged(TaskFilter.completed));
+                context.read<TaskBloc>().add(const TaskEvent.filterChanged(TaskFilter.completed));
                 Navigator.of(context).pop();
               },
             ),
@@ -495,6 +425,54 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showMessageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Messages'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('No new messages'),
+              leading: Icon(Icons.message),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExclamationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notifications'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('No urgent notifications'),
+              leading: Icon(Icons.error_outline),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddTaskDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -522,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             onPressed: () {
-              context.read<TaskBloc>().add(TaskDeleted(task.id));
+              context.read<TaskBloc>().add(TaskEvent.deleted(task.id));
               Navigator.of(context).pop();
             },
             child: const Text('Delete'),
@@ -533,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _toggleTask(String taskId) {
-    context.read<TaskBloc>().add(TaskToggled(taskId));
+    context.read<TaskBloc>().add(TaskEvent.toggled(taskId));
   }
 
   void _selectAllTasks() {
@@ -554,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _bulkToggleTasks(bool isCompleted) {
     if (_selectedTaskIds.isNotEmpty) {
-      context.read<TaskBloc>().add(TaskBulkToggle(
+      context.read<TaskBloc>().add(TaskEvent.bulkToggle(
         taskIds: _selectedTaskIds,
         isCompleted: isCompleted,
       ));
@@ -576,7 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () {
-                context.read<TaskBloc>().add(TaskBulkDelete(_selectedTaskIds));
+                context.read<TaskBloc>().add(TaskEvent.bulkDelete(_selectedTaskIds));
                 Navigator.of(context).pop();
                 _clearSelection();
               },
@@ -590,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _bulkUpdatePriority(TaskPriority priority) {
     if (_selectedTaskIds.isNotEmpty) {
-      context.read<TaskBloc>().add(TaskBulkUpdatePriority(
+      context.read<TaskBloc>().add(TaskEvent.bulkUpdatePriority(
         taskIds: _selectedTaskIds,
         priority: priority,
       ));
