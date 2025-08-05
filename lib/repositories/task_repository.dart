@@ -2,6 +2,7 @@ import '../models/task.dart';
 import '../data/database_helper.dart';
 import '../services/api_service.dart';
 import '../core/constants/app_constants.dart';
+import '../blocs/task/task_bloc.dart';
 
 class TaskRepository {
   static final TaskRepository _instance = TaskRepository._internal();
@@ -158,19 +159,26 @@ class TaskRepository {
   }
 
   /// Get task statistics
-  Future<Map<String, dynamic>> getTaskStatistics() async {
+  Future<Map<String, int>> getTaskStatistics() async {
     if (AppConstants.useMockApi) {
       // Use ApiService for mock API
       final response = await _apiService.getTaskAnalytics();
       if (response['success'] == true) {
-        return response['data'];
+        final data = response['data'] as Map<String, dynamic>;
+        return {
+          'total': data['total'] as int? ?? 0,
+          'completed': data['completed'] as int? ?? 0,
+          'pending': data['pending'] as int? ?? 0,
+          'overdue': data['overdue'] as int? ?? 0,
+          'completionRate': (data['completionRate'] as num? ?? 0.0).round(),
+        };
       } else {
         return {
           'total': 0,
           'completed': 0,
           'pending': 0,
           'overdue': 0,
-          'completionRate': 0.0,
+          'completionRate': 0,
         };
       }
     } else {
@@ -180,7 +188,7 @@ class TaskRepository {
       final completed = tasks.where((task) => task.isCompleted).length;
       final pending = total - completed;
       final overdue = tasks.where((task) => task.isOverdue).length;
-      final completionRate = total > 0 ? (completed / total) * 100 : 0.0;
+      final completionRate = total > 0 ? ((completed / total) * 100).round() : 0;
 
       return {
         'total': total,
@@ -256,6 +264,30 @@ class TaskRepository {
         }
       }
     }
+  }
+
+  /// Get sorted tasks
+  Future<List<Task>> getSortedTasks(List<Task> tasks, TaskSortOption sortOption) async {
+    switch (sortOption) {
+      case TaskSortOption.creationDate:
+        tasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case TaskSortOption.dueDate:
+        tasks.sort((a, b) {
+          if (a.dueDate == null && b.dueDate == null) return 0;
+          if (a.dueDate == null) return 1;
+          if (b.dueDate == null) return -1;
+          return a.dueDate!.compareTo(b.dueDate!);
+        });
+        break;
+      case TaskSortOption.priority:
+        tasks.sort((a, b) => b.priority.index.compareTo(a.priority.index));
+        break;
+      case TaskSortOption.title:
+        tasks.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        break;
+    }
+    return tasks;
   }
 
   /// Search tasks

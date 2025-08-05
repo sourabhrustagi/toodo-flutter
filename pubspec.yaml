@@ -98,6 +98,10 @@ dependencies:
   # Toast notifications
   fluttertoast: ^8.2.4
   
+  # Dependency Injection - Top tier DI library
+  get_it: ^7.6.7
+  injectable: ^2.3.2
+  
   # Localization
   easy_localization: ^3.0.3
   

@@ -2,8 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants/app_constants.dart';
 import 'logger_service.dart';
+import 'retry_interceptor.dart';
 
-/// Network service for handling HTTP requests with proper error handling
+/// Network service for handling HTTP requests with proper error handling and retry mechanism
 class NetworkService {
   static final NetworkService _instance = NetworkService._internal();
   factory NetworkService() => _instance;
@@ -11,6 +12,7 @@ class NetworkService {
 
   late final Dio _dio;
   late final Connectivity _connectivity;
+  late final RetryStats _retryStats;
 
   /// Initialize the network service
   Future<void> initialize() async {
@@ -28,13 +30,14 @@ class NetworkService {
     // Add interceptors
     _dio.interceptors.addAll([
       _LoggingInterceptor(),
-      _RetryInterceptor(),
+      RetryInterceptor(config: RetryConfig.defaultConfig),
       _AuthInterceptor(),
     ]);
 
     _connectivity = Connectivity();
+    _retryStats = RetryStats();
     
-    logger.info('NetworkService initialized');
+    logger.info('NetworkService initialized with retry mechanism');
   }
 
   /// Check if device is connected to internet
@@ -48,187 +51,213 @@ class NetworkService {
     }
   }
 
-  /// Make a GET request
+  /// Make a GET request with retry support
   Future<Response<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
+    RetryConfig? retryConfig,
+    bool disableRetry = false,
   }) async {
+    _retryStats.recordRequest();
+    
+    final options = Options(headers: headers);
+    if (disableRetry) {
+      options.extra = {'disableRetry': true};
+    } else if (retryConfig != null) {
+      options.extra = {'retryConfig': retryConfig};
+    }
+
     return _dio.get<T>(
       path,
       queryParameters: queryParameters,
-      options: headers != null ? Options(headers: headers) : null,
+      options: options,
     );
   }
 
-  /// Make a POST request
+  /// Make a POST request with retry support
   Future<Response<T>> post<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
+    RetryConfig? retryConfig,
+    bool disableRetry = false,
   }) async {
+    _retryStats.recordRequest();
+    
+    final options = Options(headers: headers);
+    if (disableRetry) {
+      options.extra = {'disableRetry': true};
+    } else if (retryConfig != null) {
+      options.extra = {'retryConfig': retryConfig};
+    }
+
     return _dio.post<T>(
       path,
       data: data,
       queryParameters: queryParameters,
-      options: headers != null ? Options(headers: headers) : null,
+      options: options,
     );
   }
 
-  /// Make a PUT request
+  /// Make a PUT request with retry support
   Future<Response<T>> put<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
+    RetryConfig? retryConfig,
+    bool disableRetry = false,
   }) async {
+    _retryStats.recordRequest();
+    
+    final options = Options(headers: headers);
+    if (disableRetry) {
+      options.extra = {'disableRetry': true};
+    } else if (retryConfig != null) {
+      options.extra = {'retryConfig': retryConfig};
+    }
+
     return _dio.put<T>(
       path,
       data: data,
       queryParameters: queryParameters,
-      options: headers != null ? Options(headers: headers) : null,
+      options: options,
     );
   }
 
-  /// Make a DELETE request
+  /// Make a DELETE request with retry support
   Future<Response<T>> delete<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
+    RetryConfig? retryConfig,
+    bool disableRetry = false,
   }) async {
+    _retryStats.recordRequest();
+    
+    final options = Options(headers: headers);
+    if (disableRetry) {
+      options.extra = {'disableRetry': true};
+    } else if (retryConfig != null) {
+      options.extra = {'retryConfig': retryConfig};
+    }
+
     return _dio.delete<T>(
       path,
       data: data,
       queryParameters: queryParameters,
-      options: headers != null ? Options(headers: headers) : null,
+      options: options,
     );
   }
 
-  /// Make a PATCH request
+  /// Make a PATCH request with retry support
   Future<Response<T>> patch<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
+    RetryConfig? retryConfig,
+    bool disableRetry = false,
   }) async {
+    _retryStats.recordRequest();
+    
+    final options = Options(headers: headers);
+    if (disableRetry) {
+      options.extra = {'disableRetry': true};
+    } else if (retryConfig != null) {
+      options.extra = {'retryConfig': retryConfig};
+    }
+
     return _dio.patch<T>(
       path,
       data: data,
       queryParameters: queryParameters,
-      options: headers != null ? Options(headers: headers) : null,
+      options: options,
     );
   }
 
-  /// Set authentication token
+  /// Set authentication token for requests
   void setAuthToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
-    logger.info('Auth token set');
   }
 
   /// Clear authentication token
   void clearAuthToken() {
     _dio.options.headers.remove('Authorization');
-    logger.info('Auth token cleared');
   }
 
-  /// Dispose resources
+  /// Get retry statistics
+  Map<String, dynamic> get retryStats => _retryStats.summary;
+
+  /// Reset retry statistics
+  void resetRetryStats() {
+    _retryStats.reset();
+  }
+
+  /// Dispose the network service
   void dispose() {
     _dio.close();
-    logger.info('NetworkService disposed');
   }
 }
 
-/// Interceptor for logging requests and responses
+/// Logging interceptor for debugging network requests
 class _LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    logger.logApiRequest(
-      options.method,
-      options.path,
-      headers: options.headers,
-      body: options.data,
+    logger.info(
+      '🌐 ${options.method.toUpperCase()} ${options.path}',
+      {
+        'headers': options.headers,
+        'queryParameters': options.queryParameters,
+        'data': options.data,
+      },
     );
     handler.next(options);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    logger.logApiResponse(
-      response.requestOptions.method,
-      response.requestOptions.path,
-      response.statusCode ?? 0,
-      body: response.data,
+    logger.info(
+      '✅ ${response.statusCode} ${response.requestOptions.method.toUpperCase()} ${response.requestOptions.path}',
+      {
+        'statusCode': response.statusCode,
+        'data': response.data,
+      },
     );
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    logger.logApiError(
-      err.requestOptions.method,
-      err.requestOptions.path,
+    logger.error(
+      '❌ ${err.response?.statusCode ?? 'NO_STATUS'} ${err.requestOptions.method.toUpperCase()} ${err.requestOptions.path}',
       err,
     );
     handler.next(err);
   }
 }
 
-/// Interceptor for retry logic
-class _RetryInterceptor extends Interceptor {
-  @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_shouldRetry(err)) {
-      final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
-      
-      if (retryCount < AppConstants.maxRetries) {
-        err.requestOptions.extra['retryCount'] = retryCount + 1;
-        
-        logger.info('Retrying request (${retryCount + 1}/${AppConstants.maxRetries})');
-        
-        // Wait before retrying
-        await Future.delayed(Duration(seconds: (retryCount + 1) * 2));
-        
-        try {
-          final response = await NetworkService()._dio.fetch(err.requestOptions);
-          handler.resolve(response);
-          return;
-        } catch (e) {
-          handler.next(err);
-          return;
-        }
-      }
-    }
-    
-    handler.next(err);
-  }
-
-  bool _shouldRetry(DioException error) {
-    return error.type == DioExceptionType.connectionTimeout ||
-           error.type == DioExceptionType.sendTimeout ||
-           error.type == DioExceptionType.receiveTimeout ||
-           error.type == DioExceptionType.connectionError ||
-           (error.type == DioExceptionType.badResponse && 
-            error.response?.statusCode != null &&
-            error.response!.statusCode! >= 500);
-  }
-}
-
-/// Interceptor for authentication
+/// Authentication interceptor for adding auth tokens
 class _AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Add any authentication logic here
+    // Add auth token if available
+    final authToken = options.headers['Authorization'];
+    if (authToken != null) {
+      logger.debug('🔐 Adding auth token to request: ${options.path}');
+    }
     handler.next(options);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    // Handle authentication errors (401, 403)
-    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
-      // Trigger logout or token refresh
-      logger.warning('Authentication error detected');
+    // Handle authentication errors
+    if (err.response?.statusCode == 401) {
+      logger.warning('🔐 Authentication failed for ${err.requestOptions.path}');
+      // Could trigger logout or token refresh here
     }
     handler.next(err);
   }

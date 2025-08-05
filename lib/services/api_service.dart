@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../core/constants/app_constants.dart';
 import '../core/services/network_service.dart';
 import '../core/services/logger_service.dart';
+import '../core/services/retry_interceptor.dart';
 import '../models/task.dart';
 import 'secure_storage_service.dart';
 
@@ -98,112 +99,143 @@ class ApiService {
   }
 
   // ==================== AUTHENTICATION APIs ====================
-
+  
   /// Send OTP to phone number
   Future<Map<String, dynamic>> sendOTP(String phoneNumber) async {
     if (_useMockApi) {
-      return await _mockSendOTP(phoneNumber);
+      return _mockSendOTP(phoneNumber);
     } else {
-      return await _realSendOTP(phoneNumber);
+      return _realSendOTP(phoneNumber);
     }
   }
 
+  /// Mock implementation for sending OTP
   Future<Map<String, dynamic>> _mockSendOTP(String phoneNumber) async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to send OTP');
+      throw Exception('Mock API failure: Failed to send OTP');
     }
 
     return {
       'success': true,
+      'message': 'OTP sent successfully',
       'data': {
-        'message': 'OTP sent successfully',
-        'expiresIn': 300,
+        'otp': '123456',
+        'phoneNumber': phoneNumber,
+        'expiresAt': DateTime.now().add(const Duration(minutes: 5)).toIso8601String(),
       },
     };
   }
 
+  /// Real implementation for sending OTP with retry
   Future<Map<String, dynamic>> _realSendOTP(String phoneNumber) async {
-    final response = await _networkService.post('/auth/login', data: {
-      'phoneNumber': phoneNumber,
-    });
+    try {
+      final response = await _networkService.post<Map<String, dynamic>>(
+        '/auth/send-otp',
+        data: {'phoneNumber': phoneNumber},
+        retryConfig: RetryPolicy.auth,
+      );
 
-    return response.data;
-  }
-
-  /// Verify OTP and get access token
-  Future<Map<String, dynamic>> verifyOTP(String phoneNumber, String otp) async {
-    if (_useMockApi) {
-      return await _mockVerifyOTP(phoneNumber, otp);
-    } else {
-      return await _realVerifyOTP(phoneNumber, otp);
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to send OTP', e);
+      rethrow;
     }
   }
 
+  /// Verify OTP
+  Future<Map<String, dynamic>> verifyOTP(String phoneNumber, String otp) async {
+    if (_useMockApi) {
+      return _mockVerifyOTP(phoneNumber, otp);
+    } else {
+      return _realVerifyOTP(phoneNumber, otp);
+    }
+  }
+
+  /// Mock implementation for verifying OTP
   Future<Map<String, dynamic>> _mockVerifyOTP(String phoneNumber, String otp) async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to verify OTP');
+      throw Exception('Mock API failure: Invalid OTP');
     }
 
     if (otp != '123456') {
-      throw Exception('Invalid OTP. Please enter 123456');
+      return {
+        'success': false,
+        'message': 'Invalid OTP',
+        'error': 'AUTH_ERROR',
+      };
     }
-
-    final token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
-    final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
-
-    await _setAuthToken(token);
 
     return {
       'success': true,
+      'message': 'OTP verified successfully',
       'data': {
-        'token': token,
-        'refreshToken': 'refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-        'expiresIn': 3600,
         'user': {
-          'id': userId,
+          'id': 'user_${DateTime.now().millisecondsSinceEpoch}',
           'phoneNumber': phoneNumber,
-          'name': 'Mock User',
+          'email': null,
+          'name': 'User',
+          'createdAt': DateTime.now().toIso8601String(),
         },
+        'token': 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+        'refreshToken': 'mock_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
       },
     };
   }
 
+  /// Real implementation for verifying OTP with retry
   Future<Map<String, dynamic>> _realVerifyOTP(String phoneNumber, String otp) async {
-    final response = await _networkService.post('/auth/verify-otp', data: {
-      'phoneNumber': phoneNumber,
-      'otp': otp,
-    });
+    try {
+      final response = await _networkService.post<Map<String, dynamic>>(
+        '/auth/verify-otp',
+        data: {
+          'phoneNumber': phoneNumber,
+          'otp': otp,
+        },
+        retryConfig: RetryPolicy.auth,
+      );
 
-    final data = response.data;
-    if (data['success'] == true) {
-      await _setAuthToken(data['data']['token']);
+      final data = response.data ?? {};
+      
+      // Save tokens if authentication successful
+      if (data['success'] == true && data['data'] != null) {
+        final token = data['data']['token'];
+        final refreshToken = data['data']['refreshToken'];
+        
+        if (token != null) {
+          await _setAuthToken(token);
+        }
+        if (refreshToken != null) {
+          await _secureStorage.saveRefreshToken(refreshToken);
+        }
+      }
+
+      return data;
+    } catch (e) {
+      logger.error('Failed to verify OTP', e);
+      rethrow;
     }
-
-    return data;
   }
 
   /// Logout user
   Future<Map<String, dynamic>> logout() async {
     if (_useMockApi) {
-      return await _mockLogout();
+      return _mockLogout();
     } else {
-      return await _realLogout();
+      return _realLogout();
     }
   }
 
+  /// Mock implementation for logout
   Future<Map<String, dynamic>> _mockLogout() async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to logout');
+      throw Exception('Mock API failure: Logout failed');
     }
-
-    await _clearAuthToken();
-    await _secureStorage.clearLoginState();
 
     return {
       'success': true,
@@ -211,17 +243,24 @@ class ApiService {
     };
   }
 
+  /// Real implementation for logout with retry
   Future<Map<String, dynamic>> _realLogout() async {
-    final token = await _getAuthToken();
-    if (token == null) {
-      throw Exception('No authentication token found');
+    try {
+      final response = await _networkService.post<Map<String, dynamic>>(
+        '/auth/logout',
+        retryConfig: RetryPolicy.auth,
+      );
+
+      // Clear tokens regardless of response
+      await _clearAuthToken();
+
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to logout', e);
+      // Clear tokens even if logout fails
+      await _clearAuthToken();
+      rethrow;
     }
-
-    final response = await _networkService.post('/auth/logout');
-    await _clearAuthToken();
-    await _secureStorage.clearLoginState();
-
-    return response.data;
   }
 
   // ==================== TASKS APIs ====================
@@ -333,6 +372,7 @@ class ApiService {
     };
   }
 
+  /// Real implementation for getting tasks with retry
   Future<Map<String, dynamic>> _realGetTasks({
     int page = 1,
     int limit = 20,
@@ -342,102 +382,110 @@ class ApiService {
     String? sortBy,
     String? sortOrder,
   }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'limit': limit,
-    };
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
 
-    if (priority != null) queryParams['priority'] = priority;
-    if (completed != null) queryParams['completed'] = completed;
-    if (search != null) queryParams['search'] = search;
-    if (sortBy != null) queryParams['sortBy'] = sortBy;
-    if (sortOrder != null) queryParams['sortOrder'] = sortOrder;
+      if (priority != null) queryParams['priority'] = priority;
+      if (completed != null) queryParams['completed'] = completed;
+      if (search != null) queryParams['search'] = search;
+      if (sortBy != null) queryParams['sortBy'] = sortBy;
+      if (sortOrder != null) queryParams['sortOrder'] = sortOrder;
 
-    final response = await _networkService.get('/tasks', queryParameters: queryParams);
-    return response.data;
+      final response = await _networkService.get<Map<String, dynamic>>(
+        '/tasks',
+        queryParameters: queryParams,
+        retryConfig: RetryPolicy.dataFetch,
+      );
+
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to get tasks', e);
+      rethrow;
+    }
   }
 
   /// Create new task
   Future<Map<String, dynamic>> createTask(Map<String, dynamic> taskData) async {
     if (_useMockApi) {
-      return await _mockCreateTask(taskData);
+      return _mockCreateTask(taskData);
     } else {
-      return await _realCreateTask(taskData);
+      return _realCreateTask(taskData);
     }
   }
 
+  /// Mock implementation for creating task
   Future<Map<String, dynamic>> _mockCreateTask(Map<String, dynamic> taskData) async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to create task');
+      throw Exception('Mock API failure: Failed to create task');
     }
 
     final taskId = 'task_${DateTime.now().millisecondsSinceEpoch}';
-    final now = DateTime.now();
-
-    // Extract values with proper null handling
-    final title = taskData['title'] as String;
-    final description = taskData['description'] as String? ?? '';
-    final priority = _stringToTaskPriority(taskData['priority'] as String? ?? 'medium');
-    
-    String category = 'General';
-    if (taskData['categoryId'] != null) {
-      final categoryId = taskData['categoryId'] as String;
-      category = _mockCategories[categoryId]?['name'] as String? ?? 'General';
-    }
-    
-    DateTime? dueDate;
-    if (taskData['dueDate'] != null) {
-      dueDate = DateTime.parse(taskData['dueDate'] as String);
-    } else {
-      dueDate = now.add(const Duration(days: 7));
-    }
-
     final task = Task(
       id: taskId,
-      title: title,
-      description: description,
-      priority: priority,
-      category: category,
-      dueDate: dueDate,
+      title: taskData['title'] ?? '',
+      description: taskData['description'] ?? '',
+      priority: _stringToTaskPriority(taskData['priority'] ?? 'medium'),
+      category: taskData['categoryId'] ?? 'General',
+      dueDate: taskData['dueDate'] != null ? DateTime.parse(taskData['dueDate']) : null,
       isCompleted: false,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
     _mockTasks[taskId] = task;
 
     return {
       'success': true,
+      'message': 'Task created successfully',
       'data': task.toJson(),
     };
   }
 
+  /// Real implementation for creating task with retry
   Future<Map<String, dynamic>> _realCreateTask(Map<String, dynamic> taskData) async {
-    final response = await _networkService.post('/tasks', data: taskData);
-    return response.data;
+    try {
+      final response = await _networkService.post<Map<String, dynamic>>(
+        '/tasks',
+        data: taskData,
+        retryConfig: RetryPolicy.dataModify,
+      );
+
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to create task', e);
+      rethrow;
+    }
   }
 
   /// Get specific task
   Future<Map<String, dynamic>> getTask(String taskId) async {
     if (_useMockApi) {
-      return await _mockGetTask(taskId);
+      return _mockGetTask(taskId);
     } else {
-      return await _realGetTask(taskId);
+      return _realGetTask(taskId);
     }
   }
 
+  /// Mock implementation for getting task
   Future<Map<String, dynamic>> _mockGetTask(String taskId) async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to fetch task');
+      throw Exception('Mock API failure: Failed to get task');
     }
 
     final task = _mockTasks[taskId];
     if (task == null) {
-      throw Exception('Task not found');
+      return {
+        'success': false,
+        'message': 'Task not found',
+        'error': 'NOT_FOUND',
+      };
     }
 
     return {
@@ -446,63 +494,54 @@ class ApiService {
     };
   }
 
+  /// Real implementation for getting task with retry
   Future<Map<String, dynamic>> _realGetTask(String taskId) async {
-    final response = await _networkService.get('/tasks/$taskId');
-    return response.data;
+    try {
+      final response = await _networkService.get<Map<String, dynamic>>(
+        '/tasks/$taskId',
+        retryConfig: RetryPolicy.dataFetch,
+      );
+
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to get task', e);
+      rethrow;
+    }
   }
 
   /// Update task
   Future<Map<String, dynamic>> updateTask(String taskId, Map<String, dynamic> taskData) async {
     if (_useMockApi) {
-      return await _mockUpdateTask(taskId, taskData);
+      return _mockUpdateTask(taskId, taskData);
     } else {
-      return await _realUpdateTask(taskId, taskData);
+      return _realUpdateTask(taskId, taskData);
     }
   }
 
+  /// Mock implementation for updating task
   Future<Map<String, dynamic>> _mockUpdateTask(String taskId, Map<String, dynamic> taskData) async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to update task');
+      throw Exception('Mock API failure: Failed to update task');
     }
 
-    final task = _mockTasks[taskId];
-    if (task == null) {
-      throw Exception('Task not found');
+    final existingTask = _mockTasks[taskId];
+    if (existingTask == null) {
+      return {
+        'success': false,
+        'message': 'Task not found',
+        'error': 'NOT_FOUND',
+      };
     }
 
-    // Extract values with proper null handling
-    final title = taskData['title'] as String? ?? task.title;
-    final description = taskData['description'] as String? ?? task.description;
-    
-    TaskPriority priority = task.priority;
-    if (taskData['priority'] != null) {
-      priority = _stringToTaskPriority(taskData['priority'] as String);
-    }
-    
-    String category = task.category;
-    if (taskData['categoryId'] != null) {
-      final categoryId = taskData['categoryId'] as String;
-      category = _mockCategories[categoryId]?['name'] as String? ?? task.category;
-    }
-    
-    DateTime? dueDate = task.dueDate;
-    if (taskData['dueDate'] != null) {
-      dueDate = DateTime.parse(taskData['dueDate'] as String);
-    }
-    
-    final isCompleted = taskData['completed'] as bool? ?? task.isCompleted;
-
-    final updatedTask = Task(
-      id: taskId,
-      title: title,
-      description: description,
-      priority: priority,
-      category: category,
-      dueDate: dueDate,
-      isCompleted: isCompleted,
-      createdAt: task.createdAt,
+    final updatedTask = existingTask.copyWith(
+      title: taskData['title'] ?? existingTask.title,
+      description: taskData['description'] ?? existingTask.description,
+      priority: taskData['priority'] != null ? _stringToTaskPriority(taskData['priority']) : existingTask.priority,
+      category: taskData['categoryId'] ?? existingTask.category,
+      dueDate: taskData['dueDate'] != null ? DateTime.parse(taskData['dueDate']) : existingTask.dueDate,
+      isCompleted: taskData['completed'] ?? existingTask.isCompleted,
       updatedAt: DateTime.now(),
     );
 
@@ -510,33 +549,51 @@ class ApiService {
 
     return {
       'success': true,
+      'message': 'Task updated successfully',
       'data': updatedTask.toJson(),
     };
   }
 
+  /// Real implementation for updating task with retry
   Future<Map<String, dynamic>> _realUpdateTask(String taskId, Map<String, dynamic> taskData) async {
-    final response = await _networkService.put('/tasks/$taskId', data: taskData);
-    return response.data;
+    try {
+      final response = await _networkService.put<Map<String, dynamic>>(
+        '/tasks/$taskId',
+        data: taskData,
+        retryConfig: RetryPolicy.dataModify,
+      );
+
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to update task', e);
+      rethrow;
+    }
   }
 
   /// Delete task
   Future<Map<String, dynamic>> deleteTask(String taskId) async {
     if (_useMockApi) {
-      return await _mockDeleteTask(taskId);
+      return _mockDeleteTask(taskId);
     } else {
-      return await _realDeleteTask(taskId);
+      return _realDeleteTask(taskId);
     }
   }
 
+  /// Mock implementation for deleting task
   Future<Map<String, dynamic>> _mockDeleteTask(String taskId) async {
     await Future.delayed(AppConstants.mockApiDelay);
     
     if (_shouldFail) {
-      throw Exception('Network error: Failed to delete task');
+      throw Exception('Mock API failure: Failed to delete task');
     }
 
-    if (!_mockTasks.containsKey(taskId)) {
-      throw Exception('Task not found');
+    final task = _mockTasks[taskId];
+    if (task == null) {
+      return {
+        'success': false,
+        'message': 'Task not found',
+        'error': 'NOT_FOUND',
+      };
     }
 
     _mockTasks.remove(taskId);
@@ -547,17 +604,27 @@ class ApiService {
     };
   }
 
+  /// Real implementation for deleting task with retry
   Future<Map<String, dynamic>> _realDeleteTask(String taskId) async {
-    final response = await _networkService.delete('/tasks/$taskId');
-    return response.data;
+    try {
+      final response = await _networkService.delete<Map<String, dynamic>>(
+        '/tasks/$taskId',
+        retryConfig: RetryPolicy.dataModify,
+      );
+
+      return response.data ?? {};
+    } catch (e) {
+      logger.error('Failed to delete task', e);
+      rethrow;
+    }
   }
 
   /// Mark task as completed
   Future<Map<String, dynamic>> completeTask(String taskId) async {
     if (_useMockApi) {
-      return await _mockCompleteTask(taskId);
+      return _mockCompleteTask(taskId);
     } else {
-      return await _realCompleteTask(taskId);
+      return _realCompleteTask(taskId);
     }
   }
 

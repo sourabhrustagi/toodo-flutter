@@ -1,40 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
+import 'core/di/injection.dart';
 import 'blocs/auth/auth_bloc.dart';
 import 'blocs/task/task_bloc.dart';
 import 'blocs/theme/theme_bloc.dart';
 import 'router/app_router.dart';
 import 'core/services/logger_service.dart';
-import 'core/services/network_service.dart';
-import 'core/services/theme_service.dart';
-import 'services/api_service.dart';
-import 'services/auth_service.dart';
-import 'repositories/task_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize services
-  await _initializeServices();
-  
-  runApp(const MyApp());
-}
 
-Future<void> _initializeServices() async {
-  logger.info('Starting application initialization');
-  
-  // Initialize core services
-  await NetworkService().initialize();
-  await ThemeService().initialize();
-  
-  // Initialize API service
-  await ApiService().initialize();
-  
-  // Initialize repositories
-  await TaskRepository().initialize();
-  
-  logger.info('Application initialization completed');
+  // Initialize dependency injection
+  await DIUtils.initialize();
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -45,24 +26,24 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc(authService: AuthService())..add(AuthInitialized()),
+          create: (context) => getIt<AuthBloc>()..add(AuthInitialized()),
         ),
         BlocProvider<TaskBloc>(
-          create: (context) => TaskBloc(taskRepository: TaskRepository())..add(const TaskEvent.initialized()),
+          create: (context) => getIt<TaskBloc>()..add(const TaskEvent.initialized()),
         ),
         BlocProvider<ThemeBloc>(
-          create: (context) => ThemeBloc()..add(ThemeInitialized()),
+          create: (context) => getIt<ThemeBloc>()..add(ThemeInitialized()),
         ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
           return MaterialApp.router(
-            title: 'todo-flt',
+            title: 'Todo App',
+            debugShowCheckedModeBanner: false,
             theme: state is ThemeLoaded ? state.lightTheme : ThemeData.light(),
             darkTheme: state is ThemeLoaded ? state.darkTheme : ThemeData.dark(),
             themeMode: state is ThemeLoaded ? state.themeMode : ThemeMode.system,
             routerConfig: AppRouter.router,
-            debugShowCheckedModeBanner: false,
           );
         },
       ),

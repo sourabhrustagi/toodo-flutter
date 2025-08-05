@@ -337,7 +337,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   Future<void> _onTaskBulkToggle(List<String> taskIds, bool isCompleted, Emitter<TaskState> emit) async {
     try {
-      await _taskRepository.toggleMultipleTasks(taskIds, isCompleted);
+      await _taskRepository.toggleMultipleTasks(taskIds);
       
       final currentState = state;
       if (currentState is TaskLoaded) {

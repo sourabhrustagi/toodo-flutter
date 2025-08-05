@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Application constants and configuration values
 class AppConstants {
   // App Information
@@ -9,19 +11,112 @@ class AppConstants {
   static const String databaseName = 'todo_app.db';
   static const int databaseVersion = 1;
   
-  // API Configuration
-  static const String baseUrl = 'https://api.todoapp.com/v1';
-  static const Duration apiTimeout = Duration(seconds: 30);
-  static const int maxRetries = 3;
+  // API Configuration based on flavor
+  static String get baseUrl {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return 'https://api.todoapp.com/v1';
+      case 'development':
+        return 'https://dev-api.todoapp.com/v1';
+      case 'mock':
+      default:
+        return 'https://mock-api.todoapp.com/v1';
+    }
+  }
   
-  // API Feature Flags
-  static const bool useMockApi = true; // Set to false to use real API
-  static const bool enableApiLogging = true;
-  static const bool enableApiRetry = true;
+  static Duration get apiTimeout {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return const Duration(seconds: 30);
+      case 'development':
+        return const Duration(seconds: 15);
+      case 'mock':
+      default:
+        return const Duration(seconds: 5);
+    }
+  }
+  
+  static int get maxRetries {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return 3;
+      case 'development':
+        return 2;
+      case 'mock':
+      default:
+        return 1;
+    }
+  }
+  
+  // API Feature Flags based on flavor
+  static bool get useMockApi {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return false;
+      case 'development':
+        return false;
+      case 'mock':
+      default:
+        return true;
+    }
+  }
+  
+  static bool get enableApiLogging {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return false;
+      case 'development':
+        return true;
+      case 'mock':
+      default:
+        return true;
+    }
+  }
+  
+  static bool get enableApiRetry {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return true;
+      case 'development':
+        return true;
+      case 'mock':
+      default:
+        return false;
+    }
+  }
   
   // Mock API Configuration
-  static const Duration mockApiDelay = Duration(seconds: 1);
-  static const double mockApiFailureRate = 0.1; // 10% failure rate
+  static Duration get mockApiDelay {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return const Duration(milliseconds: 500);
+      case 'development':
+        return const Duration(seconds: 1);
+      case 'mock':
+      default:
+        return const Duration(seconds: 2);
+    }
+  }
+  
+  static double get mockApiFailureRate {
+    switch (const String.fromEnvironment('FLAVOR', defaultValue: 'mock')) {
+      case 'production':
+        return 0.0;
+      case 'development':
+        return 0.05;
+      case 'mock':
+      default:
+        return 0.1;
+    }
+  }
+  
+  // Current flavor
+  static String get currentFlavor => const String.fromEnvironment('FLAVOR', defaultValue: 'mock');
+  
+  // Environment-specific settings
+  static bool get isProduction => currentFlavor == 'production';
+  static bool get isDevelopment => currentFlavor == 'development';
+  static bool get isMock => currentFlavor == 'mock';
   
   // UI Constants
   static const double defaultPadding = 16.0;
