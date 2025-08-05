@@ -180,35 +180,7 @@ class TaskViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Get tasks by completion status
-  List<Task> getCompletedTasks() {
-    return _filteredTasks.where((task) => task.isCompleted).toList();
-  }
 
-  List<Task> getPendingTasks() {
-    return _filteredTasks.where((task) => !task.isCompleted).toList();
-  }
-
-  // Get overdue tasks
-  List<Task> getOverdueTasks() {
-    final now = DateTime.now();
-    return _filteredTasks.where((task) {
-      return !task.isCompleted && 
-             task.dueDate != null && 
-             task.dueDate!.isBefore(now);
-    }).toList();
-  }
-
-  // Get tasks due today
-  List<Task> getTasksDueToday() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return _filteredTasks.where((task) {
-      return !task.isCompleted && 
-             task.dueDate != null && 
-             task.dueDate!.isAtSameMomentAs(today);
-    }).toList();
-  }
 
   // Refresh data
   Future<void> refresh() async {

@@ -1,5 +1,4 @@
 import 'package:logger/logger.dart';
-import '../constants/app_constants.dart';
 
 /// Centralized logging service for the application
 class LoggerService {

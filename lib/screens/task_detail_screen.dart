@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../blocs/task/task_bloc.dart';
 import '../models/task.dart';
 import '../widgets/add_task_dialog.dart';
-import '../widgets/shimmer_widget.dart';
 
 class TaskDetailScreen extends StatelessWidget {
   final String taskId;
@@ -17,6 +16,10 @@ class TaskDetailScreen extends StatelessWidget {
     
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => context.go('/home'),
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: const Text('Task Details'),
         actions: [
           IconButton(

@@ -15,23 +15,6 @@ class ResponsiveHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: ResponsiveAppBar(
         title: 'Todo App',
-        actions: [
-          ResponsiveIconButton(
-            icon: Icons.search,
-            onPressed: () => _showSearchDialog(context),
-            tooltip: 'Search tasks',
-          ),
-          ResponsiveIconButton(
-            icon: Icons.filter_list,
-            onPressed: () => _showFilterDialog(context),
-            tooltip: 'Filter tasks',
-          ),
-          ResponsiveIconButton(
-            icon: Icons.sort,
-            onPressed: () => _showSortDialog(context),
-            tooltip: 'Sort tasks',
-          ),
-        ],
       ),
       body: ResponsiveContainer(
         child: Column(
@@ -364,76 +347,7 @@ class ResponsiveHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Show search dialog
-  void _showSearchDialog(BuildContext context) {
-    final searchController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: ResponsiveText('Search Tasks'),
-        content: TextField(
-          controller: searchController,
-          decoration: const InputDecoration(
-            labelText: 'Search',
-            hintText: 'Enter search term',
-            prefixIcon: Icon(Icons.search),
-          ),
-          onSubmitted: (query) {
-            context.read<TaskBloc>().add(TaskEvent.searched(query));
-            Navigator.of(context).pop();
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ResponsiveButton(
-            text: 'Search',
-            onPressed: () {
-              context.read<TaskBloc>().add(TaskEvent.searched(searchController.text));
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// Show filter dialog
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: ResponsiveText('Filter Tasks'),
-        content: const ResponsiveText('Filter options will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Show sort dialog
-  void _showSortDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: ResponsiveText('Sort Tasks'),
-        content: const ResponsiveText('Sort options will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Show add task dialog
   void _showAddTaskDialog(BuildContext context) {

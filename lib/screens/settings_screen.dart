@@ -9,8 +9,6 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -210,14 +208,7 @@ class SettingsScreen extends StatelessWidget {
 
 
 
-  void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+
 
   void _showLogoutBottomSheet(BuildContext context) {
     showModalBottomSheet(

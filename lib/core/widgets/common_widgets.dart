@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
-import '../services/theme_service.dart';
 
 /// Common widgets used throughout the application
 class CommonWidgets {

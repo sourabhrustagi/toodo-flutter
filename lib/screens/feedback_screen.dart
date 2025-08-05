@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class FeedbackScreen extends StatefulWidget {
@@ -34,13 +33,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => context.go('/home'),
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: const Text('Feedback'),
-        actions: [
-          IconButton(
-            onPressed: () => _showFeedbackHistory(context),
-            icon: const Icon(Icons.history),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -189,39 +186,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               ),
             ),
             
-            const SizedBox(height: 24),
-            
-            // Quick Actions
-            _buildSectionHeader(context, 'Quick Actions'),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.bug_report),
-                    title: const Text('Report a Bug'),
-                    subtitle: const Text('Found an issue? Let us know'),
-                    onTap: () => _quickAction('Bug Report'),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.lightbulb),
-                    title: const Text('Suggest Feature'),
-                    subtitle: const Text('Have an idea? Share it'),
-                    onTap: () => _quickAction('Feature Request'),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.star),
-                    title: const Text('Rate App'),
-                    subtitle: const Text('Rate us on the app store'),
-                    onTap: () {
-                      // TODO: Open app store rating
-                      _showSnackBar(context, 'Rating feature coming soon!');
-                    },
-                  ),
-                ],
-              ),
-            ),
+
           ],
         ),
       ),
@@ -277,20 +242,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
-  void _quickAction(String category) {
-    setState(() {
-      _selectedCategory = category;
-      _selectedRating = 5; // Default to 5 stars for quick actions
-    });
-    
-    // Focus on comment field
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(FocusNode());
-      Future.delayed(const Duration(milliseconds: 100), () {
-        FocusScope.of(context).requestFocus(FocusNode());
-      });
-    });
-  }
+
 
   Future<void> _submitFeedback() async {
     if (_selectedRating == 0) {
@@ -324,37 +276,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
-  void _showFeedbackHistory(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Feedback History'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.star, color: Colors.amber),
-              title: Text('App Experience'),
-              subtitle: Text('5 stars - Excellent app!'),
-              trailing: Text('2 days ago'),
-            ),
-            ListTile(
-              leading: Icon(Icons.bug_report, color: Colors.red),
-              title: Text('Bug Report'),
-              subtitle: Text('Found an issue with task editing'),
-              trailing: Text('1 week ago'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(

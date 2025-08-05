@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/task/task_bloc.dart';
-import '../models/task.dart';
-import '../widgets/add_task_dialog.dart';
 import '../widgets/shimmer_widget.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -12,8 +9,6 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),

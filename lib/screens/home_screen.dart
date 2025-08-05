@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:timeago/timeago.dart' as timeago;
-import 'package:lottie/lottie.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import '../blocs/auth/auth_bloc.dart';
 import '../blocs/task/task_bloc.dart';
 import '../models/task.dart';
-import '../repositories/task_repository.dart';
 import '../widgets/task_card.dart';
 import '../widgets/add_task_dialog.dart';
 import '../widgets/shimmer_widget.dart';
@@ -48,21 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => _showFilterDialog(context),
               icon: const Icon(Icons.filter_list),
             ),
-            // Sort button
-            IconButton(
-              onPressed: () => _showSortDialog(context),
-              icon: const Icon(Icons.sort),
-            ),
-            // Message button
-            IconButton(
-              onPressed: () => _showMessageDialog(context),
-              icon: const Icon(Icons.message),
-            ),
-            // Exclamation button
-            IconButton(
-              onPressed: () => _showExclamationDialog(context),
-              icon: const Icon(Icons.error_outline),
-            ),
+
           ] else ...[
             // Selection mode actions
             IconButton(
@@ -373,105 +353,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSortDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sort Tasks'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Priority'),
-              leading: const Icon(Icons.priority_high),
-              onTap: () {
-                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.priority));
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              title: const Text('Due Date'),
-              leading: const Icon(Icons.schedule),
-              onTap: () {
-                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.dueDate));
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              title: const Text('Creation Date'),
-              leading: const Icon(Icons.create),
-              onTap: () {
-                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.creationDate));
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              title: const Text('Alphabetical'),
-              leading: const Icon(Icons.sort_by_alpha),
-              onTap: () {
-                context.read<TaskBloc>().add(TaskEvent.sortChanged(TaskSortOption.title));
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showMessageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Messages'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('No new messages'),
-              leading: Icon(Icons.message),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showExclamationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notifications'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('No urgent notifications'),
-              leading: Icon(Icons.error_outline),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showAddTaskDialog(BuildContext context) {
     showDialog(
