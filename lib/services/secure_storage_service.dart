@@ -19,6 +19,8 @@ class SecureStorageService {
   static const String _userIdKey = 'userId';
   static const String _userPhoneKey = 'userPhone';
   static const String _userEmailKey = 'userEmail';
+  static const String _authTokenKey = 'authToken';
+  static const String _refreshTokenKey = 'refreshToken';
 
   // Task data keys
   static const String _tasksKey = 'tasks';
@@ -69,6 +71,24 @@ class SecureStorageService {
     }
   }
 
+  Future<String?> getAuthToken() async {
+    try {
+      return await _storage.read(key: _authTokenKey);
+    } catch (e) {
+      print('Error reading auth token: $e');
+      return null;
+    }
+  }
+
+  Future<String?> getRefreshToken() async {
+    try {
+      return await _storage.read(key: _refreshTokenKey);
+    } catch (e) {
+      print('Error reading refresh token: $e');
+      return null;
+    }
+  }
+
   Future<void> saveLoginState(String userId, String phoneNumber) async {
     try {
       await _storage.write(key: _isLoggedInKey, value: 'true');
@@ -89,14 +109,41 @@ class SecureStorageService {
     }
   }
 
+  Future<void> saveAuthToken(String token) async {
+    try {
+      await _storage.write(key: _authTokenKey, value: token);
+    } catch (e) {
+      print('Error saving auth token: $e');
+    }
+  }
+
+  Future<void> saveRefreshToken(String token) async {
+    try {
+      await _storage.write(key: _refreshTokenKey, value: token);
+    } catch (e) {
+      print('Error saving refresh token: $e');
+    }
+  }
+
   Future<void> clearLoginState() async {
     try {
       await _storage.delete(key: _isLoggedInKey);
       await _storage.delete(key: _userIdKey);
       await _storage.delete(key: _userPhoneKey);
       await _storage.delete(key: _userEmailKey);
+      await _storage.delete(key: _authTokenKey);
+      await _storage.delete(key: _refreshTokenKey);
     } catch (e) {
       print('Error clearing login state: $e');
+    }
+  }
+
+  Future<void> clearAuthToken() async {
+    try {
+      await _storage.delete(key: _authTokenKey);
+      await _storage.delete(key: _refreshTokenKey);
+    } catch (e) {
+      print('Error clearing auth tokens: $e');
     }
   }
 

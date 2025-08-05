@@ -1,4 +1,5 @@
 import 'secure_storage_service.dart';
+import 'api_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -6,6 +7,7 @@ class AuthService {
   AuthService._internal();
 
   final SecureStorageService _secureStorage = SecureStorageService();
+  final ApiService _apiService = ApiService();
 
   Future<bool> isLoggedIn() async {
     final result = await _secureStorage.isLoggedIn();
@@ -26,41 +28,42 @@ class AuthService {
   }
 
   Future<String> generateOTP() async {
-    // Simulate API call with 1 second delay
-    await Future.delayed(const Duration(seconds: 1));
-    // Return fixed OTP for testing
-    return '123456';
+    // Use ApiService to send OTP
+    final phoneNumber = await getUserPhone() ?? '';
+    if (phoneNumber.isEmpty) {
+      throw Exception('No phone number found');
+    }
+    
+    final response = await _apiService.sendOTP(phoneNumber);
+    if (response['success'] == true) {
+      return '123456'; // Return fixed OTP for testing
+    } else {
+      throw Exception('Failed to send OTP');
+    }
   }
 
   Future<bool> verifyOTP(String phoneNumber, String enteredOTP, String expectedOTP) async {
-    // Simulate API call with 1 second delay
-    await Future.delayed(const Duration(seconds: 1));
-    // In a real app, you would verify OTP with a server
-    // For now, we'll just compare the entered OTP with the expected OTP
-    if (enteredOTP == expectedOTP) {
-      await _saveLoginState(phoneNumber);
+    // Use ApiService to verify OTP
+    final response = await _apiService.verifyOTP(phoneNumber, enteredOTP);
+    if (response['success'] == true) {
+      // Save user data from response
+      final userData = response['data']['user'];
+      await _secureStorage.saveLoginState(userData['id'], userData['phoneNumber']);
       return true;
+    } else {
+      throw Exception('Invalid OTP. Please enter 123456');
     }
-    // Throw an error for invalid OTP
-    throw Exception('Invalid OTP. Please enter 123456');
   }
 
   Future<bool> verifyEmailLogin(String email, String password) async {
-    // Simulate API call with 1 second delay
+    // For now, keep the existing mock implementation
+    // In a real app, you would use ApiService to verify email/password
     await Future.delayed(const Duration(seconds: 1));
-    // In a real app, you would verify email/password with a server
-    // For testing, accept any email with password "password123"
     if (password == 'password123') {
       await _saveEmailLoginState(email);
       return true;
     }
-    // Throw an error for invalid credentials
     throw Exception('Invalid email or password. Use "password123" for testing');
-  }
-
-  Future<void> _saveLoginState(String phoneNumber) async {
-    final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
-    await _secureStorage.saveLoginState(userId, phoneNumber);
   }
 
   Future<void> _saveEmailLoginState(String email) async {
@@ -69,14 +72,17 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    // Simulate API call with 1 second delay
-    await Future.delayed(const Duration(seconds: 1));
-    await _secureStorage.clearLoginState();
+    // Use ApiService to logout
+    final response = await _apiService.logout();
+    if (response['success'] == true) {
+      await _secureStorage.clearLoginState();
+    } else {
+      throw Exception('Failed to logout');
+    }
   }
 
   Future<void> clearAllData() async {
-    // Simulate API call with 1 second delay
-    await Future.delayed(const Duration(seconds: 1));
+    // Use ApiService to clear all data
     await _secureStorage.clearAllData();
   }
 } 

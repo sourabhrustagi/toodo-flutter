@@ -10,9 +10,18 @@ class AppConstants {
   static const int databaseVersion = 1;
   
   // API Configuration
-  static const String baseUrl = 'https://api.example.com';
+  static const String baseUrl = 'https://api.todoapp.com/v1';
   static const Duration apiTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
+  
+  // API Feature Flags
+  static const bool useMockApi = true; // Set to false to use real API
+  static const bool enableApiLogging = true;
+  static const bool enableApiRetry = true;
+  
+  // Mock API Configuration
+  static const Duration mockApiDelay = Duration(seconds: 1);
+  static const double mockApiFailureRate = 0.1; // 10% failure rate
   
   // UI Constants
   static const double defaultPadding = 16.0;
